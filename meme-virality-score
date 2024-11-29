@@ -1,0 +1,102 @@
+import numpy as np
+import pandas as pd
+
+class ViralityScoreCalculator:
+    def __init__(self):
+        # Weighted components of virality score
+        self.weights = {
+            'social_media_mentions': 0.25,
+            'trading_volume': 0.20,
+            'price_momentum': 0.15,
+            'community_engagement': 0.15,
+            'twitter_sentiment': 0.10,
+            'meme_creation_rate': 0.10,
+            'blockchain_activity': 0.05
+        }
+
+    def calculate_virality_score(self, token_data):
+        """
+        Comprehensive virality score calculation
+        
+        Input: Dictionary with token metrics
+        Returns: Normalized virality score (0-100)
+        """
+        # Normalize and weight each component
+        normalized_scores = {
+            'social_media_mentions': self._normalize_social_mentions(token_data['social_media_mentions']),
+            'trading_volume': self._normalize_trading_volume(token_data['trading_volume']),
+            'price_momentum': self._calculate_price_momentum(token_data['price_history']),
+            'community_engagement': self._calculate_community_engagement(token_data['social_platforms']),
+            'twitter_sentiment': self._analyze_twitter_sentiment(token_data['twitter_data']),
+            'meme_creation_rate': self._calculate_meme_creation_rate(token_data['meme_content']),
+            'blockchain_activity': self._analyze_blockchain_metrics(token_data['blockchain_data'])
+        }
+
+        # Calculate weighted virality score
+        virality_score = sum(
+            normalized_scores[metric] * self.weights[metric] 
+            for metric in self.weights
+        )
+
+        return min(max(virality_score, 0), 100)
+
+    def _normalize_social_mentions(self, mentions):
+        # Logarithmic normalization of social media mentions
+        return min(np.log(mentions + 1) / np.log(1000000) * 100, 100)
+
+    def _normalize_trading_volume(self, volume):
+        # Normalize trading volume with logarithmic scaling
+        return min(np.log(volume + 1) / np.log(1000000000) * 100, 100)
+
+    def _calculate_price_momentum(self, price_history):
+        # Calculate price momentum using recent price changes
+        returns = np.diff(price_history) / price_history[:-1]
+        momentum_score = np.mean(returns[-30:]) * 100  # Last 30 days
+        return min(max((momentum_score + 10) * 5, 0), 100)
+
+    def _calculate_community_engagement(self, social_platforms):
+        # Aggregate engagement across different platforms
+        engagement_metrics = [
+            social_platforms.get('telegram_members', 0),
+            social_platforms.get('discord_members', 0),
+            social_platforms.get('reddit_subscribers', 0)
+        ]
+        return min(np.log(np.mean(engagement_metrics) + 1) / np.log(1000000) * 100, 100)
+
+    def _analyze_twitter_sentiment(self, twitter_data):
+        # Simple sentiment analysis
+        positive_ratio = twitter_data.get('positive_sentiment', 0.5)
+        return positive_ratio * 100
+
+    def _calculate_meme_creation_rate(self, meme_content):
+        # Meme generation velocity
+        meme_count = len(meme_content)
+        return min(np.log(meme_count + 1) / np.log(1000) * 100, 100)
+
+    def _analyze_blockchain_metrics(self, blockchain_data):
+        # On-chain activity score
+        active_wallets = blockchain_data.get('active_wallets', 0)
+        transactions = blockchain_data.get('daily_transactions', 0)
+        return min(np.log(active_wallets * transactions + 1) / np.log(1000000) * 100, 100)
+
+# Example usage
+calculator = ViralityScoreCalculator()
+sample_token_data = {
+    'social_media_mentions': 50000,
+    'trading_volume': 5000000,
+    'price_history': [0.1, 0.12, 0.15, 0.18],
+    'social_platforms': {
+        'telegram_members': 50000,
+        'discord_members': 30000,
+        'reddit_subscribers': 20000
+    },
+    'twitter_data': {'positive_sentiment': 0.65},
+    'meme_content': ['meme1', 'meme2', 'meme3', 'meme4'],
+    'blockchain_data': {
+        'active_wallets': 10000,
+        'daily_transactions': 5000
+    }
+}
+
+virality_score = calculator.calculate_virality_score(sample_token_data)
+print(f"Meme Token Virality Score: {virality_score:.2f}")
